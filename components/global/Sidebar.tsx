@@ -1,10 +1,11 @@
 import Link from "next/link";
-import { Home, CheckSquare, Calendar, Clock, BookOpen, Settings } from "lucide-react";
+import { Home, CheckSquare, Calendar, Clock, BookOpen, Settings, Flame } from "lucide-react";
 
 export function Sidebar() {
   const navItems = [
-    { name: "Home", href: "/", icon: Home },
+    { name: "Home", href: "/dashboard", icon: Home },
     { name: "Tasks", href: "/tasks", icon: CheckSquare },
+    { name: "Habits", href: "/habits", icon: Flame },
     { name: "Calendar", href: "/calendar", icon: Calendar },
     { name: "Focus", href: "/pomodoro", icon: Clock },
     { name: "Notes", href: "/notes", icon: BookOpen },

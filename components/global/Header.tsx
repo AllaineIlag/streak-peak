@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Menu, Home, CheckSquare, Calendar, Clock, BookOpen, Settings } from "lucide-react";
+import { Menu, Home, CheckSquare, Calendar, Clock, BookOpen, Settings, Flame } from "lucide-react";
 import {
   Sheet,
   SheetContent,
@@ -12,8 +12,9 @@ import {
 } from "@/components/ui/sheet";
 
 const navItems = [
-  { name: "Home", href: "/", icon: Home },
+  { name: "Home", href: "/dashboard", icon: Home },
   { name: "Tasks", href: "/tasks", icon: CheckSquare },
+  { name: "Habits", href: "/habits", icon: Flame },
   { name: "Calendar", href: "/calendar", icon: Calendar },
   { name: "Focus", href: "/pomodoro", icon: Clock },
   { name: "Notes", href: "/notes", icon: BookOpen },
