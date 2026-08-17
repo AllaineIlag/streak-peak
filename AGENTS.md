@@ -15,4 +15,5 @@ When doing tasks from a checklist (like Phase 2), go at it strictly one by one. 
 If you're creating a new feature that needs a new page, make sure to add it in the sidebar nav too. Also, the Home link in the sidebar should always send the user back to the dashboard, not the landing page.
 Always use Granular Streaming with React `<Suspense>` and Skeletons for data-fetching in Next.js App Router. Never settle for top-level `loading.tsx` files that block the entire page as a lazy "MVP" approach.
 After completely building a new feature (without data), always ask the user if they are ready to seed the feature with mock data before doing it so they can visualize the UI.
+Never add explanatory helper text or paragraphs at the top of app pages describing what the feature does (e.g. "Use this tool to..."). It clutters the UI and no one reads it every time they open the app. Keep the UI clean and functional.
 <!-- END:user-rules -->

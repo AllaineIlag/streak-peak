@@ -8,33 +8,47 @@ import { toggleHabitCheckin, deleteHabit } from "@/actions/habits";
 import { calculateCurrentStreak, getLastNDays } from "@/utils/streaks";
 import { cn } from "@/lib/utils";
 
-type Habit = Database["public"]["Tables"]["habits"]["Row"];
-type HabitCheckin = Database["public"]["Tables"]["habit_checkins"]["Row"];
+import { useHabitStore } from "@/store/useHabitStore";
 
-export function HabitsList({
-  habits,
-  checkins,
-}: {
-  habits: Habit[];
-  checkins: HabitCheckin[];
-}) {
+export function HabitsList() {
   const [isPending, startTransition] = useTransition();
+  const { habits, checkins, isHydrated, toggleCheckin, deleteHabit: deleteHabitOptimistic } = useHabitStore();
 
   const last7Days = getLastNDays(7);
   const today = last7Days[last7Days.length - 1];
 
   const handleToggleCheckin = (habitId: string, date: string, currentStatus: boolean) => {
+    // Optimistic Update
+    toggleCheckin(habitId, date, currentStatus);
+
     startTransition(async () => {
-      await toggleHabitCheckin(habitId, date, currentStatus);
+      try {
+        await toggleHabitCheckin(habitId, date, currentStatus);
+      } catch (err) {
+        // Revert on failure
+        toggleCheckin(habitId, date, !currentStatus);
+        console.error("Failed to toggle checkin:", err);
+      }
     });
   };
 
   const handleDeleteHabit = (habitId: string) => {
     if (!confirm("Delete this habit forever?")) return;
+    
+    // Optimistic update
+    deleteHabitOptimistic(habitId);
+
     startTransition(async () => {
-      await deleteHabit(habitId);
+      try {
+        await deleteHabit(habitId);
+      } catch (err) {
+        // Refresh page or handle error properly to restore state since we don't store the deleted habit locally easily
+        console.error("Failed to delete habit:", err);
+      }
     });
   };
+
+  if (!isHydrated) return null;
 
   if (habits.length === 0) {
     return (

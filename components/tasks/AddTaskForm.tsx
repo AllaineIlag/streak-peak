@@ -5,10 +5,12 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { createTask } from "@/actions/tasks";
+import { useTaskStore } from "@/store/useTaskStore";
 
 export function AddTaskForm() {
   const [newTask, setNewTask] = useState("");
   const [isPending, startTransition] = useTransition();
+  const { addTask } = useTaskStore();
 
   const handleAddTask = (e: React.FormEvent) => {
     e.preventDefault();
@@ -16,7 +18,12 @@ export function AddTaskForm() {
     const title = newTask;
     setNewTask("");
     startTransition(async () => {
-      await createTask(title);
+      try {
+        const createdTask = await createTask(title);
+        if (createdTask) addTask(createdTask);
+      } catch (err) {
+        console.error("Failed to create task:", err);
+      }
     });
   };
 

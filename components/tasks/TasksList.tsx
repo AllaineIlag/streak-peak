@@ -3,16 +3,13 @@
 import { TaskItem } from "./TaskItem";
 import { Database } from "@/lib/database.types";
 
-type Task = Database["public"]["Tables"]["tasks"]["Row"];
-type Subtask = Database["public"]["Tables"]["subtasks"]["Row"];
+import { useTaskStore } from "@/store/useTaskStore";
 
-export function TasksList({
-  tasks,
-  subtasks,
-}: {
-  tasks: Task[];
-  subtasks: Subtask[];
-}) {
+export function TasksList() {
+  const { tasks, subtasks, isHydrated } = useTaskStore();
+
+  if (!isHydrated) return null; // Avoid hydration mismatch
+
   const activeTasks = tasks.filter((t) => t.status === "active");
   const completedTasks = tasks.filter((t) => t.status === "completed");
 

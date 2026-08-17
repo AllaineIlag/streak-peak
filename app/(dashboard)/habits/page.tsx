@@ -4,6 +4,8 @@ import { AddHabitForm } from "@/components/habits/AddHabitForm";
 import { HabitsList } from "@/components/habits/HabitsList";
 import { HabitsSkeleton } from "@/components/habits/HabitsSkeleton";
 
+import { HabitsInitializer } from "@/components/habits/HabitsInitializer";
+
 // The async Server Component that fetches data
 async function HabitsDataFetcher() {
   const supabase = await createClient();
@@ -30,7 +32,12 @@ async function HabitsDataFetcher() {
     return <div>Error loading check-ins.</div>;
   }
 
-  return <HabitsList habits={habits || []} checkins={checkins || []} />;
+  return (
+    <>
+      <HabitsInitializer habits={habits || []} checkins={checkins || []} />
+      <HabitsList />
+    </>
+  );
 }
 
 // The main Page Component that renders instantly

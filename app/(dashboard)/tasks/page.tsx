@@ -4,6 +4,8 @@ import { AddTaskForm } from "@/components/tasks/AddTaskForm";
 import { TasksList } from "@/components/tasks/TasksList";
 import { TasksSkeleton } from "@/components/tasks/TasksSkeleton";
 
+import { TasksInitializer } from "@/components/tasks/TasksInitializer";
+
 // The async Server Component that fetches data
 async function TasksDataFetcher() {
   const supabase = await createClient();
@@ -27,7 +29,12 @@ async function TasksDataFetcher() {
     return <div>Error loading subtasks.</div>;
   }
 
-  return <TasksList tasks={tasks || []} subtasks={subtasks || []} />;
+  return (
+    <>
+      <TasksInitializer tasks={tasks || []} subtasks={subtasks || []} />
+      <TasksList />
+    </>
+  );
 }
 
 // The main Page Component that renders instantly

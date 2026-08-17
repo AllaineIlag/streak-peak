@@ -9,17 +9,20 @@ export async function createHabit(title: string, emoji: string | null) {
 
   if (!user) throw new Error("Unauthorized");
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("habits")
     .insert({
       title,
       emoji,
       user_id: user.id,
       frequency: "daily",
-    });
+    })
+    .select()
+    .single();
 
   if (error) throw new Error(error.message);
   revalidatePath("/habits");
+  return data;
 }
 
 export async function toggleHabitCheckin(habitId: string, date: string, currentStatus: boolean) {

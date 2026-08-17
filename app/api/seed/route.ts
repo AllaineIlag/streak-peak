@@ -76,6 +76,84 @@ export async function GET() {
     await supabase.from("habit_checkins").insert(checkinsToInsert);
   }
 
-  // Redirect to dashboard after seeding
-  return NextResponse.redirect(new URL("/dashboard", process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"));
+  // Seed Focus Sessions (Pomodoro)
+  const focusSessionsToInsert = [];
+  const today = new Date();
+  
+  // Create 5 mock sessions over the last 3 days
+  for (let i = 0; i < 5; i++) {
+    const sessionDate = new Date(today);
+    sessionDate.setDate(sessionDate.getDate() - (i % 3)); // Spread over last 3 days
+    sessionDate.setHours(10 + i, 0, 0, 0); // Start at 10 AM, 11 AM, etc.
+    
+    const durationMinutes = i % 2 === 0 ? 25 : 50; // Mix of 25m and 50m sessions
+    
+    const endedAt = new Date(sessionDate.getTime() + durationMinutes * 60 * 1000);
+    
+    focusSessionsToInsert.push({
+      user_id: user.id,
+      duration_minutes: durationMinutes,
+      started_at: sessionDate.toISOString(),
+      ended_at: endedAt.toISOString(),
+      status: "completed"
+    });
+  }
+
+  const { error: focusError } = await supabase.from("focus_sessions").insert(focusSessionsToInsert);
+  if (focusError) {
+    return NextResponse.json({ error: focusError.message }, { status: 500 });
+  }
+
+  // Seed Calendar Events
+  const eventsToInsert = [];
+  
+  // Event 1: Morning Standup (10:00 AM - 10:30 AM today)
+  const event1Start = new Date(today);
+  event1Start.setHours(10, 0, 0, 0);
+  const event1End = new Date(today);
+  event1End.setHours(10, 30, 0, 0);
+  
+  // Event 2: Deep Work Block (1:00 PM - 3:00 PM today)
+  const event2Start = new Date(today);
+  event2Start.setHours(13, 0, 0, 0);
+  const event2End = new Date(today);
+  event2End.setHours(15, 0, 0, 0);
+  
+  // Event 3: Gym (5:30 PM - 7:00 PM today)
+  const event3Start = new Date(today);
+  event3Start.setHours(17, 30, 0, 0);
+  const event3End = new Date(today);
+  event3End.setHours(19, 0, 0, 0);
+
+  eventsToInsert.push({
+    user_id: user.id,
+    title: "Morning Standup",
+    description: "Daily team sync to discuss blockers.",
+    start_time: event1Start.toISOString(),
+    end_time: event1End.toISOString()
+  });
+
+  eventsToInsert.push({
+    user_id: user.id,
+    title: "Deep Work Block",
+    description: "No interruptions allowed.",
+    start_time: event2Start.toISOString(),
+    end_time: event2End.toISOString()
+  });
+
+  eventsToInsert.push({
+    user_id: user.id,
+    title: "Gym / Workout",
+    description: "Leg day!",
+    start_time: event3Start.toISOString(),
+    end_time: event3End.toISOString()
+  });
+
+  const { error: eventsError } = await supabase.from("events").insert(eventsToInsert);
+  if (eventsError) {
+    return NextResponse.json({ error: eventsError.message }, { status: 500 });
+  }
+
+  // Redirect to calendar after seeding
+  return NextResponse.redirect(new URL("/calendar", process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"));
 }

@@ -9,6 +9,7 @@ import { updateTaskStatus, toggleSubtask, createSubtask } from "@/actions/tasks"
 import { Database } from "@/lib/database.types";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
+import { useTaskStore } from "@/store/useTaskStore";
 
 type Task = Database["public"]["Tables"]["tasks"]["Row"];
 type Subtask = Database["public"]["Tables"]["subtasks"]["Row"];
@@ -23,18 +24,39 @@ export function TaskItem({
   const [isPending, startTransition] = useTransition();
   const [isExpanded, setIsExpanded] = useState(false);
   const [newSubtask, setNewSubtask] = useState("");
+  const { updateTask, updateSubtask, addSubtask } = useTaskStore();
 
   const isCompleted = task.status === "completed";
 
   const handleToggleTask = () => {
+    const newStatus = isCompleted ? "active" : "completed";
+    // Optimistic Update
+    updateTask(task.id, { status: newStatus });
+    
     startTransition(async () => {
-      await updateTaskStatus(task.id, isCompleted ? "active" : "completed");
+      try {
+        await updateTaskStatus(task.id, newStatus);
+      } catch (err) {
+        // Revert on failure
+        updateTask(task.id, { status: task.status });
+        console.error("Failed to toggle task:", err);
+      }
     });
   };
 
   const handleToggleSubtask = (subtaskId: string, currentStatus: boolean) => {
+    const newStatus = !currentStatus;
+    // Optimistic Update
+    updateSubtask(subtaskId, { is_completed: newStatus });
+
     startTransition(async () => {
-      await toggleSubtask(subtaskId, !currentStatus);
+      try {
+        await toggleSubtask(subtaskId, newStatus);
+      } catch (err) {
+        // Revert on failure
+        updateSubtask(subtaskId, { is_completed: currentStatus });
+        console.error("Failed to toggle subtask:", err);
+      }
     });
   };
 
@@ -43,8 +65,14 @@ export function TaskItem({
     if (!newSubtask.trim()) return;
     const title = newSubtask;
     setNewSubtask("");
+    
     startTransition(async () => {
-      await createSubtask(task.id, title);
+      try {
+        const createdSubtask = await createSubtask(task.id, title);
+        if (createdSubtask) addSubtask(createdSubtask);
+      } catch (err) {
+        console.error("Failed to create subtask:", err);
+      }
     });
   };
 

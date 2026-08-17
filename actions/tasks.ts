@@ -9,16 +9,19 @@ export async function createTask(title: string) {
 
   if (!user) throw new Error("Unauthorized");
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("tasks")
     .insert({
       title,
       user_id: user.id,
       status: "active",
-    });
+    })
+    .select()
+    .single();
 
   if (error) throw new Error(error.message);
   revalidatePath("/tasks");
+  return data;
 }
 
 export async function updateTaskStatus(id: string, status: "active" | "completed") {
@@ -34,16 +37,19 @@ export async function updateTaskStatus(id: string, status: "active" | "completed
 
 export async function createSubtask(taskId: string, title: string) {
   const supabase = await createClient();
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("subtasks")
     .insert({
       title,
       task_id: taskId,
       is_completed: false,
-    });
+    })
+    .select()
+    .single();
 
   if (error) throw new Error(error.message);
   revalidatePath("/tasks");
+  return data;
 }
 
 export async function toggleSubtask(id: string, isCompleted: boolean) {

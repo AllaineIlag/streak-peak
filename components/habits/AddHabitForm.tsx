@@ -5,11 +5,13 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { createHabit } from "@/actions/habits";
+import { useHabitStore } from "@/store/useHabitStore";
 
 export function AddHabitForm() {
   const [newHabit, setNewHabit] = useState("");
   const [newEmoji, setNewEmoji] = useState("💧");
   const [isPending, startTransition] = useTransition();
+  const { addHabit } = useHabitStore();
 
   const handleAddHabit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -19,7 +21,12 @@ export function AddHabitForm() {
     setNewHabit("");
     setNewEmoji("💧");
     startTransition(async () => {
-      await createHabit(title, emoji);
+      try {
+        const createdHabit = await createHabit(title, emoji);
+        if (createdHabit) addHabit(createdHabit);
+      } catch (err) {
+        console.error("Failed to create habit:", err);
+      }
     });
   };
 

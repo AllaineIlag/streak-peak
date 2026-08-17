@@ -1,13 +1,19 @@
+"use client";
+
 import Link from "next/link";
-import { Home, CheckSquare, Calendar, Clock, BookOpen, Settings, Flame } from "lucide-react";
+import { usePathname } from "next/navigation";
+import { cn } from "@/lib/utils";
+import { LayoutDashboard, CheckSquare, Flame, Timer, Calendar, BookOpen, Settings } from "lucide-react";
 
 export function Sidebar() {
+  const pathname = usePathname();
+
   const navItems = [
-    { name: "Home", href: "/dashboard", icon: Home },
-    { name: "Tasks", href: "/tasks", icon: CheckSquare },
+    { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
     { name: "Habits", href: "/habits", icon: Flame },
+    { name: "Tasks", href: "/tasks", icon: CheckSquare },
     { name: "Calendar", href: "/calendar", icon: Calendar },
-    { name: "Focus", href: "/pomodoro", icon: Clock },
+    { name: "Pomodoro", href: "/pomodoro", icon: Timer },
     { name: "Notes", href: "/notes", icon: BookOpen },
     { name: "Settings", href: "/profile", icon: Settings },
   ];
