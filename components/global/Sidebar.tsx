@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { LayoutDashboard, CheckSquare, Flame, Timer, Calendar, BookOpen, Settings } from "lucide-react";
+import { LayoutDashboard, CheckSquare, Flame, Timer, Calendar, BookOpen, Settings, Clock } from "lucide-react";
 
 export function Sidebar() {
   const pathname = usePathname();
@@ -14,6 +14,7 @@ export function Sidebar() {
     { name: "Tasks", href: "/tasks", icon: CheckSquare },
     { name: "Calendar", href: "/calendar", icon: Calendar },
     { name: "Pomodoro", href: "/pomodoro", icon: Timer },
+    { name: "Clocks", href: "/clocks", icon: Clock },
     { name: "Notes", href: "/notes", icon: BookOpen },
     { name: "Settings", href: "/profile", icon: Settings },
   ];

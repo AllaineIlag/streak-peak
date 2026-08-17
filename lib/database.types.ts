@@ -290,6 +290,27 @@ export type Database = {
         }
         Relationships: []
       }
+      timezones: {
+        Row: {
+          created_at: string
+          id: string
+          timezone: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          timezone: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          timezone?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       workspace_members: {
         Row: {
           created_at: string

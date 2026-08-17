@@ -13,6 +13,17 @@ const eslintConfig = defineConfig([
     "build/**",
     "next-env.d.ts",
   ]),
+  {
+    rules: {
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector: "JSXOpeningElement[name.name=/Trigger$/] > JSXAttribute[name.name='asChild']",
+          message: "Do not use 'asChild' on Triggers in Next.js 16.3 (base-ui). Use 'render={<Button />}' instead to prevent <button><button></button></button> hydration errors."
+        }
+      ]
+    }
+  }
 ]);
 
 export default eslintConfig;
