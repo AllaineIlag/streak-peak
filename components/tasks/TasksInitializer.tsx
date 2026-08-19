@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import { useTaskStore, Task, Subtask } from "@/store/useTaskStore";
 
 export function TasksInitializer({
@@ -12,10 +12,12 @@ export function TasksInitializer({
 }) {
   const initialized = useRef(false);
 
-  if (!initialized.current) {
-    useTaskStore.getState().setInitialData(tasks, subtasks);
-    initialized.current = true;
-  }
+  useEffect(() => {
+    if (!initialized.current) {
+      useTaskStore.getState().setInitialData(tasks, subtasks);
+      initialized.current = true;
+    }
+  }, [tasks, subtasks]);
 
   return null;
 }

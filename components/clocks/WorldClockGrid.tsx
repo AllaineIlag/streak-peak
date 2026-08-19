@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useClockStore } from "@/store/useClockStore";
 import { addTimezone, removeTimezone } from "@/actions/timezones";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { X, Clock as ClockIcon, Check, ChevronsUpDown } from "lucide-react";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -59,7 +59,9 @@ export function WorldClockGrid() {
         
         <Popover open={open} onOpenChange={setOpen}>
           <PopoverTrigger 
-            render={<Button variant="outline" role="combobox" aria-expanded={open} className="w-[250px] justify-between" />}
+            className={buttonVariants({ variant: "outline", className: "w-[250px] justify-between" })}
+            role="combobox"
+            aria-expanded={open}
           >
             Add Timezone...
             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />

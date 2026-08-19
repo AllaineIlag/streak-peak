@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import { useEventStore, Event, FocusSession } from "@/store/useEventStore";
 
 export function CalendarInitializer({
@@ -12,10 +12,12 @@ export function CalendarInitializer({
 }) {
   const initialized = useRef(false);
 
-  if (!initialized.current) {
-    useEventStore.getState().setInitialData(events, focusSessions);
-    initialized.current = true;
-  }
+  useEffect(() => {
+    if (!initialized.current) {
+      useEventStore.getState().setInitialData(events, focusSessions);
+      initialized.current = true;
+    }
+  }, [events, focusSessions]);
 
   return null;
 }

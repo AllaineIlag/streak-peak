@@ -183,41 +183,33 @@ export type Database = {
       }
       notes: {
         Row: {
-          content: string | null
+          content: Json | null
           created_at: string
           id: string
+          tags: string[]
           title: string
           updated_at: string
-          user_id: string | null
-          workspace_id: string | null
+          user_id: string
         }
         Insert: {
-          content?: string | null
+          content?: Json | null
           created_at?: string
           id?: string
-          title: string
-          updated_at?: string
-          user_id?: string | null
-          workspace_id?: string | null
-        }
-        Update: {
-          content?: string | null
-          created_at?: string
-          id?: string
+          tags?: string[]
           title?: string
           updated_at?: string
-          user_id?: string | null
-          workspace_id?: string | null
+          user_id: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "notes_workspace_id_fkey"
-            columns: ["workspace_id"]
-            isOneToOne: false
-            referencedRelation: "workspaces"
-            referencedColumns: ["id"]
-          },
-        ]
+        Update: {
+          content?: Json | null
+          created_at?: string
+          id?: string
+          tags?: string[]
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       subtasks: {
         Row: {

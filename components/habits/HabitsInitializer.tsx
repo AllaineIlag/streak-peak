@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import { useHabitStore, Habit, HabitCheckin } from "@/store/useHabitStore";
 
 export function HabitsInitializer({
@@ -12,10 +12,12 @@ export function HabitsInitializer({
 }) {
   const initialized = useRef(false);
 
-  if (!initialized.current) {
-    useHabitStore.getState().setInitialData(habits, checkins);
-    initialized.current = true;
-  }
+  useEffect(() => {
+    if (!initialized.current) {
+      useHabitStore.getState().setInitialData(habits, checkins);
+      initialized.current = true;
+    }
+  }, [habits, checkins]);
 
   return null;
 }
