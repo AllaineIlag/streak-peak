@@ -1,19 +1,30 @@
-export default function DashboardPage() {
+import { getDashboardData } from "@/actions/dashboard";
+import { DashboardClient } from "@/components/dashboard/DashboardClient";
+import { format } from "date-fns";
+
+export const metadata = {
+  title: "Dashboard - StreakPeak",
+};
+
+export default async function DashboardPage() {
+  const now = new Date();
+  const dateStr = format(now, "yyyy-MM-dd");
+  const monthStr = format(now, "yyyy-MM");
+
+  const { data, error } = await getDashboardData(dateStr, monthStr);
+
   return (
-    <div className="space-y-6">
-      <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-      <p className="text-muted-foreground">Welcome back! Here's your daily summary.</p>
-      
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {/* Placeholder cards for dashboard */}
-        <div className="rounded-xl border bg-card text-card-foreground shadow">
-          <div className="p-6 flex flex-row items-center justify-between space-y-0 pb-2">
-            <h3 className="tracking-tight text-sm font-medium">Tasks Completed</h3>
-          </div>
-          <div className="p-6 pt-0">
-            <div className="text-2xl font-bold">12</div>
-            <p className="text-xs text-muted-foreground">+2 from yesterday</p>
-          </div>
+    <div className="h-[calc(100vh-theme(spacing.16))] sm:h-screen flex flex-col overflow-hidden bg-background">
+      <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-card/50">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
+          <p className="text-sm text-muted-foreground mt-1">Welcome back! Here's your daily summary.</p>
+        </div>
+      </div>
+
+      <div className="flex-1 overflow-y-auto p-4 md:p-8">
+        <div className="max-w-6xl mx-auto">
+          <DashboardClient data={data} />
         </div>
       </div>
     </div>

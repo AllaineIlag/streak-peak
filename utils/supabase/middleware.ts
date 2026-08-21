@@ -38,7 +38,6 @@ export async function updateSession(request: NextRequest) {
     pathname.startsWith('/login') || 
     pathname.startsWith('/auth')
   
-  // If no user is logged in, redirect them to the login page for any protected route
   if (!user && !isPublicRoute) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'

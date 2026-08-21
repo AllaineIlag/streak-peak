@@ -44,6 +44,83 @@ export type Database = {
         }
         Relationships: []
       }
+      finance_categories: {
+        Row: {
+          id: string
+          user_id: string
+          name: string
+          type: "income" | "expense"
+          monthly_budget: number
+          color: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          name: string
+          type: "income" | "expense"
+          monthly_budget?: number
+          color?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          name?: string
+          type?: "income" | "expense"
+          monthly_budget?: number
+          color?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      finance_transactions: {
+        Row: {
+          id: string
+          user_id: string
+          category_id: string | null
+          amount: number
+          date: string
+          description: string | null
+          type: "income" | "expense"
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          category_id?: string | null
+          amount: number
+          date: string
+          description?: string | null
+          type: "income" | "expense"
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          category_id?: string | null
+          amount?: number
+          date?: string
+          description?: string | null
+          type?: "income" | "expense"
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "finance_transactions_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "finance_categories"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       finance_budgets: {
         Row: {
           amount: number
@@ -334,6 +411,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      weekly_reviews: {
+        Row: {
+          id: string
+          user_id: string
+          start_date: string
+          end_date: string
+          metrics: Json
+          reflection: Json
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          start_date: string
+          end_date: string
+          metrics: Json
+          reflection: Json
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          start_date?: string
+          end_date?: string
+          metrics?: Json
+          reflection?: Json
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       workspaces: {
         Row: {
