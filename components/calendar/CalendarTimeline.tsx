@@ -1,15 +1,37 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useEventStore } from "@/store/useEventStore";
+import { getCalendarData } from "@/actions/events";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, Settings2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Settings2, Loader2 } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuCheckboxItem } from "@/components/ui/dropdown-menu";
 import { EventDialog } from "./EventDialog";
 import { cn } from "@/lib/utils";
 
 export function CalendarTimeline() {
-  const { events, focusSessions, isHydrated } = useEventStore();
+  const { events, focusSessions, isHydrated, setInitialData } = useEventStore();
+  const [loading, setLoading] = useState(!isHydrated);
+
+  useEffect(() => {
+    let isMounted = true;
+    async function fetchData() {
+      if (!isHydrated) setLoading(true);
+      
+      const { events: fetchedEvents, focusSessions: fetchedFocusSessions } = await getCalendarData();
+      
+      if (isMounted) {
+        if (fetchedEvents && fetchedFocusSessions) {
+          setInitialData(fetchedEvents, fetchedFocusSessions);
+        }
+        setLoading(false);
+      }
+    }
+    
+    fetchData();
+    
+    return () => { isMounted = false; };
+  }, [isHydrated, setInitialData]);
   
   // Settings state
   const [pixelsPerHour, setPixelsPerHour] = useState(80);
@@ -111,10 +133,16 @@ export function CalendarTimeline() {
     setIsDialogOpen(true);
   };
 
-  if (!isHydrated) return null;
+  if (!isHydrated && loading) {
+    return (
+      <div className="flex flex-col h-full bg-background items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground/50" />
+      </div>
+    );
+  }
 
   return (
-    <div className="flex flex-col h-full bg-background animate-in fade-in duration-500">
+    <div className="flex flex-col h-full bg-background">
       {/* Header Toolbar */}
       <div className="flex items-center justify-between p-4 border-b">
         <div className="flex items-center gap-4">

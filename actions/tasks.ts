@@ -85,3 +85,23 @@ export async function deleteTask(id: string) {
   if (error) throw new Error(error.message);
   revalidatePath("/tasks");
 }
+
+export async function getTasksData() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { tasks: null, subtasks: null, error: "Unauthorized" };
+
+  const [
+    { data: tasks, error: tasksError },
+    { data: subtasks, error: subtasksError }
+  ] = await Promise.all([
+    supabase.from("tasks").select("*").order("created_at", { ascending: false }),
+    supabase.from("subtasks").select("*").order("created_at", { ascending: true })
+  ]);
+
+  if (tasksError || subtasksError) {
+    return { tasks: null, subtasks: null, error: "Failed to fetch tasks data" };
+  }
+
+  return { tasks, subtasks, error: null };
+}

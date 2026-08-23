@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { MoodLog, createMoodLog, deleteMoodLog } from "@/actions/mood";
+import { MoodLog, createMoodLog, deleteMoodLog, getMoodLogs } from "@/actions/mood";
 import { useMoodStore } from "@/store/useMoodStore";
 import { 
   format, 
@@ -19,7 +19,6 @@ import { ChevronLeft, ChevronRight, Smile, Trash2 } from "lucide-react";
 import { clsx } from "clsx";
 
 interface MoodClientProps {
-  initialLogs: MoodLog[];
   currentMonthStr: string;
 }
 
@@ -39,9 +38,8 @@ const MOOD_LABELS = {
   5: "Awful",
 };
 
-export function MoodClient({ initialLogs, currentMonthStr }: MoodClientProps) {
+export function MoodClient({ currentMonthStr }: MoodClientProps) {
   const { logs, isHydrated, setInitialData, addOrUpdateLog, removeLog } = useMoodStore();
-  const initialized = useRef(false);
 
   // Parse currentMonthStr (e.g. "2026-08") to get initial current month view
   const [currentMonth, setCurrentMonth] = useState(() => {
@@ -55,19 +53,32 @@ export function MoodClient({ initialLogs, currentMonthStr }: MoodClientProps) {
   const [rating, setRating] = useState<number | null>(null);
   const [note, setNote] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  const [loading, setLoading] = useState(!isHydrated);
 
   useEffect(() => {
-    if (!initialized.current && !isHydrated) {
-      setInitialData(initialLogs);
-      initialized.current = true;
+    let isMounted = true;
+    async function fetchData() {
+      if (!isHydrated) setLoading(true);
+      
+      const { data } = await getMoodLogs(currentMonthStr);
+      
+      if (isMounted) {
+        if (data) {
+          setInitialData(data);
+        }
+        setLoading(false);
+      }
     }
-  }, [initialLogs, isHydrated, setInitialData]);
+    
+    fetchData();
+    
+    return () => { isMounted = false; };
+  }, [currentMonthStr, isHydrated, setInitialData]);
 
-  const displayLogs = isHydrated ? logs : initialLogs;
-  
   // Find log for selected date
   const selectedDateStr = format(selectedDate, "yyyy-MM-dd");
-  const currentLog = displayLogs.find(l => l.date === selectedDateStr);
+  const currentLog = logs.find(l => l.date === selectedDateStr);
 
   useEffect(() => {
     if (currentLog) {
@@ -78,6 +89,28 @@ export function MoodClient({ initialLogs, currentMonthStr }: MoodClientProps) {
       setNote("");
     }
   }, [currentLog, selectedDateStr]);
+
+  if (loading && !isHydrated) {
+    return (
+      <div className="max-w-6xl mx-auto p-4 md:p-8 space-y-8 animate-pulse">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="lg:col-span-2 space-y-6">
+            <div className="flex items-center justify-between">
+              <div className="bg-muted h-8 w-48 rounded" />
+              <div className="flex gap-2">
+                <div className="bg-muted h-9 w-9 rounded-md" />
+                <div className="bg-muted h-9 w-9 rounded-md" />
+              </div>
+            </div>
+            <div className="bg-muted h-[600px] rounded-xl" />
+          </div>
+          <div className="lg:col-span-1 space-y-6">
+            <div className="bg-muted h-[400px] rounded-xl" />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -169,7 +202,7 @@ export function MoodClient({ initialLogs, currentMonthStr }: MoodClientProps) {
             <div className="grid grid-cols-7 auto-rows-[6rem]">
               {days.map((day, idx) => {
                 const dayStr = format(day, "yyyy-MM-dd");
-                const dayLog = displayLogs.find(l => l.date === dayStr);
+                const dayLog = logs.find(l => l.date === dayStr);
                 const isSelected = isSameDay(day, selectedDate);
                 const isCurrentMonth = isSameMonth(day, currentMonth);
 

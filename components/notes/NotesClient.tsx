@@ -1,17 +1,46 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useNoteStore } from "@/store/useNoteStore";
-import { createNote, updateNote, deleteNote } from "@/actions/notes";
+import { createNote, updateNote, deleteNote, getNotes } from "@/actions/notes";
 import { RichTextEditor } from "@/components/notes/RichTextEditor";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Search, Trash, Hash, MoreVertical } from "lucide-react";
+import { Plus, Search, Trash, Hash, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 
 export function NotesClient() {
-  const { notes, addNote, updateNote: updateStoreNote, removeNote } = useNoteStore();
-  const [selectedNoteId, setSelectedNoteId] = useState<string | null>(notes[0]?.id || null);
+  const { notes, addNote, updateNote: updateStoreNote, removeNote, isHydrated, setInitialData } = useNoteStore();
+  const [loading, setLoading] = useState(!isHydrated);
+
+  useEffect(() => {
+    let isMounted = true;
+    async function fetchData() {
+      if (!isHydrated) setLoading(true);
+      
+      const { data: fetchedNotes } = await getNotes();
+      
+      if (isMounted) {
+        if (fetchedNotes) {
+          setInitialData(fetchedNotes);
+        }
+        setLoading(false);
+      }
+    }
+    
+    fetchData();
+    
+    return () => { isMounted = false; };
+  }, [isHydrated, setInitialData]);
+
+  const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null);
+
+  // Auto-select first note when notes load if none selected
+  useEffect(() => {
+    if (!selectedNoteId && notes.length > 0) {
+      setSelectedNoteId(notes[0].id);
+    }
+  }, [notes, selectedNoteId]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
 
@@ -83,6 +112,14 @@ export function NotesClient() {
     }
     await deleteNote(id);
   };
+
+  if (!isHydrated && loading) {
+    return (
+      <div className="flex h-[calc(100vh-theme(spacing.16))] overflow-hidden rounded-xl border border-border bg-card items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground/50" />
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-[calc(100vh-theme(spacing.16))] overflow-hidden rounded-xl border border-border bg-card">

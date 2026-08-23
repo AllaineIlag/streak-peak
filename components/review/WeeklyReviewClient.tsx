@@ -5,6 +5,7 @@ import { format, parseISO, subWeeks, addWeeks } from "date-fns";
 import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import { calculateWeeklyMetrics, getWeeklyReview, saveWeeklyReview, WeeklyMetrics, WeeklyReview } from "@/actions/weekly-review";
 import { useRouter } from "next/navigation";
+import { useReviewStore } from "@/store/useReviewStore";
 
 interface WeeklyReviewClientProps {
   startDate: string;
@@ -28,52 +29,68 @@ const MOOD_EMOJIS = {
 export function WeeklyReviewClient({ startDate, endDate }: WeeklyReviewClientProps) {
   const router = useRouter();
   
-  const [loading, setLoading] = useState(true);
-  const [metrics, setMetrics] = useState<WeeklyMetrics | null>(null);
-  const [reflection, setReflection] = useState<Record<string, string>>({
-    went_well: "",
-    to_improve: "",
-    next_week: ""
-  });
+  const { reviews, metrics, reflections, setReviewData } = useReviewStore();
+  
+  // If we have it in the store, we don't need to show a loading skeleton initially.
+  const hasCachedData = !!metrics[startDate];
+  const [loading, setLoading] = useState(!hasCachedData);
+  
+  const [localReflection, setLocalReflection] = useState<Record<string, string>>(
+    reflections[startDate] || { went_well: "", to_improve: "", next_week: "" }
+  );
   const [isSaving, setIsSaving] = useState(false);
-  const [review, setReview] = useState<WeeklyReview | null>(null);
+
+  // Sync local reflection state when store updates
+  useEffect(() => {
+    if (reflections[startDate]) {
+      setLocalReflection(reflections[startDate]);
+    }
+  }, [reflections, startDate]);
 
   useEffect(() => {
+    let isMounted = true;
+    
     async function fetchData() {
-      setLoading(true);
+      // If no cache, show loading
+      if (!metrics[startDate]) setLoading(true);
       
-      // 1. Check if review already exists
       const { data: existingReview } = await getWeeklyReview(startDate, endDate);
       
-      if (existingReview) {
-        setReview(existingReview);
-        setMetrics(existingReview.metrics as unknown as WeeklyMetrics);
-        setReflection(existingReview.reflection as Record<string, string> || {
-          went_well: "",
-          to_improve: "",
-          next_week: ""
-        });
-      } else {
-        // 2. Fetch fresh metrics
-        setReview(null);
-        setReflection({ went_well: "", to_improve: "", next_week: "" });
-        const { data: freshMetrics } = await calculateWeeklyMetrics(startDate, endDate);
-        if (freshMetrics) setMetrics(freshMetrics);
+      if (isMounted) {
+        if (existingReview) {
+          setReviewData(
+            startDate, 
+            existingReview, 
+            existingReview.metrics as any, 
+            (existingReview.reflection as Record<string, string>) || { went_well: "", to_improve: "", next_week: "" }
+          );
+        } else {
+          const { data: freshMetrics } = await calculateWeeklyMetrics(startDate, endDate);
+          if (freshMetrics) {
+            setReviewData(startDate, null, freshMetrics, { went_well: "", to_improve: "", next_week: "" });
+          }
+        }
+        setLoading(false);
       }
-      
-      setLoading(false);
     }
     
     fetchData();
-  }, [startDate, endDate]);
+    
+    return () => {
+      isMounted = false;
+    };
+  }, [startDate, endDate, setReviewData]);
+
+  const currentMetrics = metrics[startDate];
+  const currentReview = reviews[startDate];
 
   const handleSave = async () => {
-    if (!metrics) return;
+    if (!currentMetrics) return;
     setIsSaving(true);
     
-    const { data } = await saveWeeklyReview(startDate, endDate, metrics, reflection);
+    const { data } = await saveWeeklyReview(startDate, endDate, currentMetrics, localReflection);
     if (data) {
-      setReview(data);
+      setReviewData(startDate, data, currentMetrics, localReflection);
     }
     
     setIsSaving(false);
@@ -108,28 +125,28 @@ export function WeeklyReviewClient({ startDate, endDate }: WeeklyReviewClientPro
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
           <MetricCard 
             label="Tasks Done" 
-            value={metrics?.tasksCompleted?.toString() || "0"} 
+            value={currentMetrics?.tasksCompleted?.toString() || "0"} 
             loading={loading} 
           />
           <MetricCard 
             label="Habit Check-ins" 
-            value={metrics?.habitCheckins?.toString() || "0"} 
+            value={currentMetrics?.habitCheckins?.toString() || "0"} 
             loading={loading} 
           />
           <MetricCard 
             label="Net Savings" 
-            value={`$${metrics?.netSavings?.toFixed(2) || "0.00"}`} 
-            valueColor={metrics?.netSavings && metrics.netSavings >= 0 ? "text-green-500" : "text-red-500"}
+            value={`$${currentMetrics?.netSavings?.toFixed(2) || "0.00"}`} 
+            valueColor={currentMetrics?.netSavings && currentMetrics.netSavings >= 0 ? "text-green-500" : "text-red-500"}
             loading={loading} 
           />
           <MetricCard 
             label="Focus Time" 
-            value={`${metrics?.focusMinutes || 0}m`} 
+            value={`${currentMetrics?.focusMinutes || 0}m`} 
             loading={loading} 
           />
           <MetricCard 
             label="Avg Mood" 
-            value={metrics?.averageMood ? MOOD_EMOJIS[Math.round(metrics.averageMood) as keyof typeof MOOD_EMOJIS] : "-"} 
+            value={currentMetrics?.averageMood ? MOOD_EMOJIS[Math.round(currentMetrics.averageMood) as keyof typeof MOOD_EMOJIS] : "-"} 
             loading={loading} 
           />
         </div>
@@ -146,8 +163,8 @@ export function WeeklyReviewClient({ startDate, endDate }: WeeklyReviewClientPro
               <div key={q.id} className="space-y-2">
                 <label className="text-sm font-medium">{q.label}</label>
                 <textarea
-                  value={reflection[q.id] || ""}
-                  onChange={(e) => setReflection(prev => ({ ...prev, [q.id]: e.target.value }))}
+                  value={localReflection[q.id] || ""}
+                  onChange={(e) => setLocalReflection(prev => ({ ...prev, [q.id]: e.target.value }))}
                   disabled={loading}
                   className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 min-h-[100px] resize-y disabled:opacity-50"
                   placeholder={loading ? "Loading..." : "Write your thoughts..."}
@@ -163,7 +180,7 @@ export function WeeklyReviewClient({ startDate, endDate }: WeeklyReviewClientPro
               className="bg-primary text-primary-foreground px-6 py-2 rounded-md text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center gap-2"
             >
               {isSaving && <Loader2 className="w-4 h-4 animate-spin" />}
-              {review ? "Update Review" : "Save Review"}
+              {currentReview ? "Update Review" : "Save Review"}
             </button>
           </div>
         </div>

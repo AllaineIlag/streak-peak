@@ -62,3 +62,23 @@ export async function deleteHabit(id: string) {
   if (error) throw new Error(error.message);
   revalidatePath("/habits");
 }
+
+export async function getHabitsData() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { habits: null, checkins: null, error: "Unauthorized" };
+
+  const [
+    { data: habits, error: habitsError },
+    { data: checkins, error: checkinsError }
+  ] = await Promise.all([
+    supabase.from("habits").select("*").order("created_at", { ascending: true }),
+    supabase.from("habit_checkins").select("*").order("date", { ascending: false })
+  ]);
+
+  if (habitsError || checkinsError) {
+    return { habits: null, checkins: null, error: "Failed to fetch habits data" };
+  }
+
+  return { habits, checkins, error: null };
+}

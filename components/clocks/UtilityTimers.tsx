@@ -52,7 +52,7 @@ export function UtilityTimers() {
   };
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500 delay-150 fill-mode-both">
+    <div className="space-y-8">
       {/* Stopwatch Section */}
       <div>
         <h3 className="text-xl font-bold tracking-tight mb-4">Stopwatch</h3>

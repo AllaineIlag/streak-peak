@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { useClockStore } from "@/store/useClockStore";
-import { addTimezone, removeTimezone } from "@/actions/timezones";
+import { addTimezone, removeTimezone, getTimezones } from "@/actions/timezones";
 import { Button, buttonVariants } from "@/components/ui/button";
-import { X, Clock as ClockIcon, Check, ChevronsUpDown } from "lucide-react";
+import { X, Clock as ClockIcon, Check, ChevronsUpDown, Loader2 } from "lucide-react";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
@@ -12,7 +12,22 @@ import { cn } from "@/lib/utils";
 const ALL_TIMEZONES = Intl.supportedValuesOf("timeZone");
 
 export function WorldClockGrid() {
-  const { timezones, isHydrated, addTimezone: addOptimistic, removeTimezone: removeOptimistic } = useClockStore();
+  const { timezones, isHydrated, setInitialData, addTimezone: addOptimistic, removeTimezone: removeOptimistic } = useClockStore();
+  const [loading, setLoading] = useState(!isHydrated);
+
+  useEffect(() => {
+    let isMounted = true;
+    async function fetchData() {
+      if (!isHydrated) setLoading(true);
+      const data = await getTimezones();
+      if (isMounted) {
+        setInitialData(data);
+        setLoading(false);
+      }
+    }
+    fetchData();
+    return () => { isMounted = false; };
+  }, [isHydrated, setInitialData]);
   
   const [time, setTime] = useState(new Date());
   const [open, setOpen] = useState(false);
@@ -24,7 +39,18 @@ export function WorldClockGrid() {
     return () => clearInterval(timer);
   }, []);
 
-  if (!isHydrated) return null;
+  if (!isHydrated && loading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h3 className="text-xl font-bold tracking-tight">World Clocks</h3>
+        </div>
+        <div className="flex justify-center p-12">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground/50" />
+        </div>
+      </div>
+    );
+  }
 
   const handleAdd = async (tz: string) => {
     if (timezones.some((t) => t.timezone === tz)) return;
@@ -53,7 +79,7 @@ export function WorldClockGrid() {
   };
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500">
+    <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h3 className="text-xl font-bold tracking-tight">World Clocks</h3>
         

@@ -3,14 +3,10 @@
 import { useState, useEffect } from "react";
 import { useTheme } from "next-themes";
 import { LogOut, Monitor, Moon, Sun, Trophy, Target, Flame, Wallet, CheckCircle, Loader2 } from "lucide-react";
-import { ProfileStats } from "@/actions/profile";
+import { getProfileData, ProfileStats } from "@/actions/profile";
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
-
-interface ProfileClientProps {
-  email: string;
-  initialStats: ProfileStats | null;
-}
+import { useProfileStore } from "@/store/useProfileStore";
 
 const ACHIEVEMENTS = [
   {
@@ -92,7 +88,30 @@ const ACHIEVEMENTS = [
   },
 ];
 
-export function ProfileClient({ email, initialStats }: ProfileClientProps) {
+export function ProfileClient() {
+  const { email, stats, isHydrated, setInitialData } = useProfileStore();
+  const [loading, setLoading] = useState(!isHydrated);
+
+  useEffect(() => {
+    let isMounted = true;
+    async function fetchData() {
+      if (!isHydrated) setLoading(true);
+      
+      const { data } = await getProfileData();
+      
+      if (isMounted) {
+        if (data) {
+          setInitialData(data.email, data.stats);
+        }
+        setLoading(false);
+      }
+    }
+    
+    fetchData();
+    
+    return () => { isMounted = false; };
+  }, [isHydrated, setInitialData]);
+
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const router = useRouter();
@@ -109,7 +128,16 @@ export function ProfileClient({ email, initialStats }: ProfileClientProps) {
     router.push("/login");
   };
 
-  const stats = initialStats || { tasksCompleted: 0, habitCheckins: 0, focusMinutes: 0, financeTransactions: 0 };
+  if (!isHydrated && loading) {
+    return (
+      <div className="max-w-4xl mx-auto p-4 md:p-8 space-y-8 flex items-center justify-center min-h-[50vh]">
+        <Loader2 className="w-8 h-8 animate-spin text-muted-foreground/50" />
+      </div>
+    );
+  }
+
+  const currentStats = stats || { tasksCompleted: 0, habitCheckins: 0, focusMinutes: 0, financeTransactions: 0 };
+  const currentEmail = email || "Unknown User";
 
   return (
     <div className="max-w-4xl mx-auto p-4 md:p-8 space-y-8">
@@ -124,7 +152,7 @@ export function ProfileClient({ email, initialStats }: ProfileClientProps) {
         <div className="space-y-4">
           <div>
             <label className="text-sm font-medium text-muted-foreground">Email Address</label>
-            <p className="font-medium mt-1">{email}</p>
+            <p className="font-medium mt-1">{currentEmail}</p>
           </div>
           
           <button
@@ -176,8 +204,8 @@ export function ProfileClient({ email, initialStats }: ProfileClientProps) {
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {ACHIEVEMENTS.map(ach => {
-            const unlocked = ach.check(stats);
-            const progress = ach.progress(stats);
+            const unlocked = ach.check(currentStats);
+            const progress = ach.progress(currentStats);
             
             return (
               <div 

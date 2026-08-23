@@ -1,20 +1,48 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { TaskItem } from "./TaskItem";
 import { Database } from "@/lib/database.types";
-
+import { getTasksData } from "@/actions/tasks";
 import { useTaskStore } from "@/store/useTaskStore";
+import { TasksSkeleton } from "./TasksSkeleton";
+import { cn } from "@/lib/utils";
 
 export function TasksList() {
-  const { tasks, subtasks, isHydrated } = useTaskStore();
+  const { tasks, subtasks, isHydrated, setInitialData } = useTaskStore();
 
-  if (!isHydrated) return null; // Avoid hydration mismatch
+  const [loading, setLoading] = useState(!isHydrated);
+  const [wasInitiallyHydrated] = useState(isHydrated);
+
+  useEffect(() => {
+    let isMounted = true;
+    async function fetchData() {
+      if (!isHydrated) setLoading(true);
+      
+      const { tasks: fetchedTasks, subtasks: fetchedSubtasks } = await getTasksData();
+      
+      if (isMounted) {
+        if (fetchedTasks && fetchedSubtasks) {
+          setInitialData(fetchedTasks, fetchedSubtasks);
+        }
+        setLoading(false);
+      }
+    }
+    
+    fetchData();
+    
+    return () => { isMounted = false; };
+  }, [isHydrated, setInitialData]);
+
+  if (!isHydrated && loading) return <TasksSkeleton />;
 
   const activeTasks = tasks.filter((t) => t.status === "active");
   const completedTasks = tasks.filter((t) => t.status === "completed");
 
+  const animationClass = wasInitiallyHydrated ? "" : "animate-in fade-in slide-in-from-bottom-4 duration-500 delay-150 fill-mode-both";
+
   return (
-    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 delay-150 fill-mode-both">
+    <div className={animationClass}>
       <div className="space-y-4">
         {activeTasks.length === 0 ? (
           <p className="text-center text-muted-foreground py-8">No active tasks. You're all caught up!</p>

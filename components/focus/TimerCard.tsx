@@ -127,7 +127,7 @@ export function TimerCard({ preset }: TimerCardProps) {
 
   return (
     <div className={cn(
-      "relative flex flex-col items-center justify-between p-6 rounded-3xl border shadow-sm transition-all animate-in zoom-in-95 duration-500",
+      "relative flex flex-col items-center justify-between p-6 rounded-3xl border shadow-sm transition-all",
       isActive && status === "running" ? "border-primary/50 bg-primary/5 shadow-md" : "bg-card hover:border-foreground/20"
     )}>
       

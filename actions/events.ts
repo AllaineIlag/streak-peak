@@ -3,6 +3,27 @@
 import { createClient } from "@/utils/supabase/server";
 import { revalidatePath } from "next/cache";
 
+export async function getCalendarData() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) return { events: null, focusSessions: null, error: "Unauthorized" };
+
+  const [
+    { data: events, error: eventsError },
+    { data: focusSessions, error: focusSessionsError }
+  ] = await Promise.all([
+    supabase.from("events").select("*").order("start_time", { ascending: true }),
+    supabase.from("focus_sessions").select("*").eq("status", "completed").order("started_at", { ascending: true })
+  ]);
+
+  if (eventsError || focusSessionsError) {
+    return { events: null, focusSessions: null, error: "Failed to fetch calendar data" };
+  }
+
+  return { events, focusSessions, error: null };
+}
+
 export async function createEvent(data: { title: string; description?: string; start_time: string; end_time: string }) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();

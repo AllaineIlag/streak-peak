@@ -11,8 +11,7 @@ export function AddHabitForm() {
   const [newHabit, setNewHabit] = useState("");
   const [newEmoji, setNewEmoji] = useState("💧");
   const [isPending, startTransition] = useTransition();
-  const { addHabit } = useHabitStore();
-
+  const { addHabit, isHydrated } = useHabitStore();
   const handleAddHabit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newHabit.trim()) return;
@@ -31,7 +30,7 @@ export function AddHabitForm() {
   };
 
   return (
-    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div>
       <h2 className="text-2xl font-bold tracking-tight mb-4">Habits Tracker</h2>
       <form onSubmit={handleAddHabit} className="flex flex-col sm:flex-row items-center gap-3">
         <Input

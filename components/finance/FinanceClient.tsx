@@ -1,44 +1,75 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { FinanceCategory, FinanceTransaction } from "@/actions/finance";
+import { useEffect, useState } from "react";
+import { FinanceCategory, FinanceTransaction, getFinanceCategories, getFinanceTransactions, deleteFinanceTransaction, deleteFinanceCategory } from "@/actions/finance";
 import { useFinanceStore } from "@/store/useFinanceStore";
 import { format } from "date-fns";
-import { Plus, ArrowUpRight, ArrowDownRight, Wallet, TrendingUp, TrendingDown, Edit2, Trash } from "lucide-react";
+import { Plus, ArrowUpRight, ArrowDownRight, Wallet, TrendingUp, TrendingDown, Edit2, Trash, Loader2 } from "lucide-react";
 import { TransactionDialog } from "./TransactionDialog";
 import { CategoryDialog } from "./CategoryDialog";
-import { deleteFinanceTransaction, deleteFinanceCategory } from "@/actions/finance";
 import { clsx } from "clsx";
 
 interface FinanceClientProps {
-  initialCategories: FinanceCategory[];
-  initialTransactions: FinanceTransaction[];
   currentMonthStr: string;
 }
 
-export function FinanceClient({ initialCategories, initialTransactions, currentMonthStr }: FinanceClientProps) {
+export function FinanceClient({ currentMonthStr }: FinanceClientProps) {
   const { categories, transactions, isHydrated, setInitialData, removeTransaction, removeCategory } = useFinanceStore();
-  const initialized = useRef(false);
 
   const [isTransactionDialogOpen, setIsTransactionDialogOpen] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState<FinanceTransaction | null>(null);
 
   const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<FinanceCategory | null>(null);
+  
+  const [loading, setLoading] = useState(!isHydrated);
 
   useEffect(() => {
-    if (!initialized.current && !isHydrated) {
-      setInitialData(initialCategories, initialTransactions);
-      initialized.current = true;
+    let isMounted = true;
+    async function fetchData() {
+      if (!isHydrated) setLoading(true);
+      
+      const [categoriesRes, transactionsRes] = await Promise.all([
+        getFinanceCategories(),
+        getFinanceTransactions(currentMonthStr)
+      ]);
+      
+      if (isMounted) {
+        if (categoriesRes.data && transactionsRes.data) {
+          setInitialData(categoriesRes.data, transactionsRes.data);
+        }
+        setLoading(false);
+      }
     }
-  }, [initialCategories, initialTransactions, isHydrated, setInitialData]);
+    
+    fetchData();
+    
+    return () => { isMounted = false; };
+  }, [currentMonthStr, isHydrated, setInitialData]);
 
-  const displayCategories = isHydrated ? categories : initialCategories;
-  const displayTransactions = isHydrated ? transactions : initialTransactions;
+  if (loading && !isHydrated) {
+    return (
+      <div className="max-w-6xl mx-auto p-4 md:p-8 space-y-8 animate-pulse">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {[1,2,3].map(i => <div key={i} className="bg-muted h-32 rounded-xl" />)}
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="space-y-6 lg:col-span-1">
+            <div className="bg-muted h-8 w-48 rounded" />
+            <div className="bg-muted h-64 rounded-xl" />
+          </div>
+          <div className="space-y-6 lg:col-span-2">
+            <div className="bg-muted h-8 w-48 rounded" />
+            <div className="bg-muted h-64 rounded-xl" />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // Calculate aggregates
-  const totalIncome = displayTransactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
-  const totalExpense = displayTransactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
+  const totalIncome = transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
+  const totalExpense = transactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
   const netSavings = totalIncome - totalExpense;
 
   const handleEditTransaction = (t: FinanceTransaction) => {
@@ -113,8 +144,8 @@ export function FinanceClient({ initialCategories, initialTransactions, currentM
           </div>
 
           <div className="space-y-4">
-            {displayCategories.filter(c => c.type === 'expense').map(category => {
-              const spent = displayTransactions.filter(t => t.category_id === category.id && t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
+            {categories.filter(c => c.type === 'expense').map(category => {
+              const spent = transactions.filter(t => t.category_id === category.id && t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
               const budget = category.monthly_budget || 0;
               const percent = budget > 0 ? Math.min((spent / budget) * 100, 100) : 0;
               const isOver = budget > 0 && spent > budget;
@@ -149,11 +180,11 @@ export function FinanceClient({ initialCategories, initialTransactions, currentM
               );
             })}
 
-            {displayCategories.filter(c => c.type === 'income').length > 0 && (
+            {categories.filter(c => c.type === 'income').length > 0 && (
               <div className="pt-4 border-t border-border">
                 <h3 className="text-sm font-medium text-muted-foreground mb-3">Income Categories</h3>
                 <div className="flex flex-wrap gap-2">
-                  {displayCategories.filter(c => c.type === 'income').map(category => (
+                  {categories.filter(c => c.type === 'income').map(category => (
                     <div key={category.id} className="inline-flex items-center gap-2 bg-muted px-3 py-1.5 rounded-full text-sm group">
                       <div className="w-2 h-2 rounded-full" style={{ backgroundColor: category.color }} />
                       {category.name}
@@ -164,7 +195,7 @@ export function FinanceClient({ initialCategories, initialTransactions, currentM
               </div>
             )}
             
-            {displayCategories.length === 0 && (
+            {categories.length === 0 && (
               <div className="text-center py-8 text-muted-foreground bg-muted/30 rounded-xl border border-dashed border-border">
                 <p>No categories yet.</p>
                 <button onClick={() => { setSelectedCategory(null); setIsCategoryDialogOpen(true); }} className="text-sm text-primary hover:underline mt-2">Create one</button>
@@ -187,10 +218,10 @@ export function FinanceClient({ initialCategories, initialTransactions, currentM
           </div>
 
           <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
-            {displayTransactions.length > 0 ? (
+            {transactions.length > 0 ? (
               <div className="divide-y divide-border">
-                {displayTransactions.map(transaction => {
-                  const category = displayCategories.find(c => c.id === transaction.category_id);
+                {transactions.map(transaction => {
+                  const category = categories.find(c => c.id === transaction.category_id);
                   const isIncome = transaction.type === 'income';
 
                   return (
@@ -241,7 +272,7 @@ export function FinanceClient({ initialCategories, initialTransactions, currentM
         open={isTransactionDialogOpen} 
         onOpenChange={setIsTransactionDialogOpen}
         transaction={selectedTransaction}
-        categories={displayCategories}
+        categories={categories}
       />
       
       <CategoryDialog

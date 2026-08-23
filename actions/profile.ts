@@ -9,7 +9,7 @@ export interface ProfileStats {
   financeTransactions: number;
 }
 
-export async function getProfileStats(): Promise<{ data: ProfileStats | null; error: string | null }> {
+export async function getProfileData(): Promise<{ data: { email: string, stats: ProfileStats } | null; error: string | null }> {
   try {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
@@ -34,10 +34,13 @@ export async function getProfileStats(): Promise<{ data: ProfileStats | null; er
 
     return {
       data: {
-        tasksCompleted: tasksCompleted || 0,
-        habitCheckins: habitCheckins || 0,
-        focusMinutes,
-        financeTransactions: financeTransactions || 0,
+        email: user.email || "Unknown User",
+        stats: {
+          tasksCompleted: tasksCompleted || 0,
+          habitCheckins: habitCheckins || 0,
+          focusMinutes,
+          financeTransactions: financeTransactions || 0,
+        }
       },
       error: null
     };

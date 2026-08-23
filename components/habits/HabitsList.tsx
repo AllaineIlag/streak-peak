@@ -1,18 +1,41 @@
 "use client";
 
-import { useTransition } from "react";
+import { useTransition, useEffect, useState } from "react";
 import { Database } from "@/lib/database.types";
 import { Button } from "@/components/ui/button";
 import { Trash2 } from "lucide-react";
-import { toggleHabitCheckin, deleteHabit } from "@/actions/habits";
+import { toggleHabitCheckin, deleteHabit, getHabitsData } from "@/actions/habits";
 import { calculateCurrentStreak, getLastNDays } from "@/utils/streaks";
 import { cn } from "@/lib/utils";
 
 import { useHabitStore } from "@/store/useHabitStore";
+import { HabitsSkeleton } from "./HabitsSkeleton";
 
 export function HabitsList() {
   const [isPending, startTransition] = useTransition();
-  const { habits, checkins, isHydrated, toggleCheckin, deleteHabit: deleteHabitOptimistic } = useHabitStore();
+  const { habits, checkins, isHydrated, setInitialData, toggleCheckin, deleteHabit: deleteHabitOptimistic } = useHabitStore();
+  
+  const [loading, setLoading] = useState(!isHydrated);
+
+  useEffect(() => {
+    let isMounted = true;
+    async function fetchData() {
+      if (!isHydrated) setLoading(true);
+      
+      const { habits: fetchedHabits, checkins: fetchedCheckins } = await getHabitsData();
+      
+      if (isMounted) {
+        if (fetchedHabits && fetchedCheckins) {
+          setInitialData(fetchedHabits, fetchedCheckins);
+        }
+        setLoading(false);
+      }
+    }
+    
+    fetchData();
+    
+    return () => { isMounted = false; };
+  }, [isHydrated, setInitialData]);
 
   const last7Days = getLastNDays(7);
   const today = last7Days[last7Days.length - 1];
@@ -48,11 +71,14 @@ export function HabitsList() {
     });
   };
 
-  if (!isHydrated) return null;
+  const [wasInitiallyHydrated] = useState(isHydrated);
+  const animationClass = wasInitiallyHydrated ? "" : "animate-in fade-in slide-in-from-bottom-4 duration-500 delay-150 fill-mode-both";
+
+  if (!isHydrated && loading) return <HabitsSkeleton />;
 
   if (habits.length === 0) {
     return (
-      <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 delay-150 fill-mode-both">
+      <div className={animationClass}>
         <p className="text-center text-muted-foreground py-12 border rounded-xl border-dashed">
           No habits yet. Start tracking something new today!
         </p>
@@ -61,7 +87,7 @@ export function HabitsList() {
   }
 
   return (
-    <div className="grid gap-4 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-150 fill-mode-both">
+    <div className={cn("grid gap-4", animationClass)}>
       {habits.map((habit) => {
         const habitCheckins = checkins.filter((c) => c.habit_id === habit.id);
         const streak = calculateCurrentStreak(habitCheckins.map((c) => c.date));

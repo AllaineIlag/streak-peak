@@ -10,8 +10,7 @@ import { useTaskStore } from "@/store/useTaskStore";
 export function AddTaskForm() {
   const [newTask, setNewTask] = useState("");
   const [isPending, startTransition] = useTransition();
-  const { addTask } = useTaskStore();
-
+  const { addTask, isHydrated } = useTaskStore();
   const handleAddTask = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTask.trim()) return;
@@ -28,7 +27,7 @@ export function AddTaskForm() {
   };
 
   return (
-    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div>
       <h2 className="text-2xl font-bold tracking-tight mb-4">Tasks</h2>
       <form onSubmit={handleAddTask} className="flex items-center gap-3">
         <Input
